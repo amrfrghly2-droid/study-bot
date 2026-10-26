@@ -1,0 +1,99 @@
+import time
+import requests
+import random
+from datetime import datetime
+
+# 1. التوكن بتاع البوت
+TOKEN = "8538556421:AAGXrmcdKAJj7fFhnQkrLjv6HIOwqLw8FL8"
+
+# 2. رقم الجروب بتاعك
+CHAT_ID = "-5141733418"
+
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    try:
+        response = requests.post(url, json=payload)
+        return response.json()
+    except Exception as e:
+        print(f"خطأ في إرسال الرسالة: {e}")
+
+# قوائم الجمل التحفيزية
+start_quotes = [
+    "شدوا حيلكم يا أبطال، مستنيين إنجازاتكم! 📚✨",
+    "لم نُخلق لنكون عاديات، اتركوا أثراً واصنعوا مجداً! 🩺💪",
+    "قدامنا ساعتين تركيز، حلمنا يستاهل التعب والاجتهاد! 🚀",
+    "تعب اليوم هو راحة وفخر بكرة، توكلوا على الله! ✨🌿"
+]
+
+break_quotes = [
+    "خدوا بريك ارتاحوا واشربوا مية، ونرجع نكمل بكل حماس! ☕💧",
+    "افصلوا عقولكم لمدة ربع ساعة واسترخوا، جاهزين للسيشن الجاية! 🌿✨",
+    "استراحة قصيرة ومستحقة، قوموا جددوا طاقتكم! ☕🌸"
+]
+
+print("🤖 بوت تنظيم جدول الـ 24 ساعة بدأ العمل...")
+
+while True:
+    now = datetime.now()
+    current_hour = now.hour
+    current_minute = now.minute
+    
+    # تحويل الوقت الحالي لدقائق عشان نقارنه بسهولة
+    total_minutes = current_hour * 60 + current_minute
+    
+    # تحديد وقت السيشن أو البريك بناءً على جدول اليوم الثابت
+    # بنحسب إحنا في أي دقيقة من اليوم (من منتصف الليل)
+    minute_in_day = total_minutes % 135  # إجمالي دورة السيشن والبريك (120 + 15 = 135 دقيقة)
+    
+    # لو إحنا في أول السيشن (يعني لسه مديورة حالا)
+    # هنجيب وقت البداية والنهاية المضبوط ونبعته
+    start_time_obj = datetime.now()
+    
+    # لو الوقت الحالي مناسب لبداية السيشن (نحسب الساعات بالترتيب)
+    # الكود هنا بيحسب السيشنات بناءً على الوقت الحقيقي للابتوب
+    
+    quote = random.choice(start_quotes)
+    break_q = random.choice(break_quotes)
+    
+    # حساب وقت البداية والنهاية الحاليين بدقة
+    start_str = start_time_obj.strftime("%I:%M %p")
+    
+    # وقت نهاية السيشن بعد ساعتين
+    end_time_obj = start_time_obj.replace(minute=(start_time_obj.minute + 120) % 60) # تقريبي للعرض أو حسب النظام
+    # ولضمان دقة الساعات والدقائق تلقائياً:
+    import datetime as dt
+    end_time_dt = start_time_obj + dt.timedelta(hours=2)
+    end_str = end_time_dt.strftime("%I:%M %p")
+    
+    # 1. إرسال رسالة بدء السيشن بالساعات المضبوطة
+    session_msg = (
+        f"🔔 **بدأت سيشن جديدة!**\n\n"
+        f"⏰ **التوقيت:** من `{start_str}` إلى `{end_str}` (ساعتين تركيز)\n\n"
+        f"💬 {quote}"
+    )
+    send_telegram_message(session_msg)
+    print(f"تم إرسال سيشن: من {start_str} إلى {end_str}")
+    
+    # ننتظر ساعتين خلصوا السيشن
+    time.sleep(120 * 60)
+    
+    # وقت البريك يبدأ من نهاية السيشن
+    b_start_str = end_str
+    b_end_dt = end_time_dt + dt.timedelta(minutes=15)
+    b_end_str = b_end_dt.strftime("%I:%M %p")
+    
+    break_msg = (
+        f"☕ **انتهت السيشن ووصل وقت البريك!**\n\n"
+        f"⏰ **التوقيت:** من `{b_start_str}` إلى `{b_end_str}` (15 دقيقة راحة)\n\n"
+        f"💬 {break_q}"
+    )
+    send_telegram_message(break_msg)
+    print(f"تم إرسال بريك: من {b_start_str} إلى {b_end_str}")
+    
+    # ننتظر 15 دقيقة وقت البريك
+    time.sleep(15 * 60)
