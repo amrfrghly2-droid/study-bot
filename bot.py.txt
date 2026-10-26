@@ -1,0 +1,78 @@
+import time
+import requests
+import random
+from datetime import datetime, timedelta
+
+# 1. التوكن بتاع البوت الخاص بكِ أو بدكتور عمر
+TOKEN = "8538556421:AAGXrmcdKAJj7fFhnQkrLjv6HIOwqLw8FL8"
+
+# 2. رقم جروب المتابعة (اكتبي رقم الجروب الجديد هنا بين العلامتين)
+CHAT_ID = "-5141733418"
+
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    try:
+        response = requests.post(url, json=payload)
+        return response.json()
+    except Exception as e:
+        print(f"خطأ في إرسال الرسالة: {e}")
+
+# قوائم الجمل التحفيزية المتنوعة
+start_quotes = [
+    "شدوا حيلكم يا أبطال، مستنيين إنجازاتكم! 📚✨",
+    "لم نُخلق لنكون عاديات، اتركوا أثراً واصنعوا مجداً! 🩺💪",
+    "قدامنا ساعتين تركيز، حلمنا يستاهل التعب والاجتهاد! 🚀",
+    "تعب اليوم هو راحة وفخر بكرة، توكلوا على الله! ✨🌿"
+]
+
+break_quotes = [
+    "خدوا بريك ارتاحوا واشربوا مية، ونرجع نكمل بكل حماس! ☕💧",
+    "افصلوا عقولكم لمدة ربع ساعة واسترخوا، جاهزين للسيشن الجاية! 🌿✨",
+    "استراحة قصيرة ومستحقة، قوموا جددوا طاقتكم! ☕🌸"
+]
+
+print("🤖 بوت تنظيم السيشنات بدأ العمل بنظام الـ 24 ساعة...")
+
+while True:
+    start_time_obj = datetime.now()
+    start_str = start_time_obj.strftime("%I:%M %p")
+    
+    end_time_dt = start_time_obj + timedelta(hours=2)
+    end_str = end_time_dt.strftime("%I:%M %p")
+    
+    quote = random.choice(start_quotes)
+    
+    session_msg = (
+        f"🔔 **بدأت سيشن جديدة!**\n\n"
+        f"⏰ **التوقيت:** من `{start_str}` إلى `{end_str}` (ساعتين تركيز)\n\n"
+        f"💬 {quote}"
+    )
+    
+    send_telegram_message(session_msg)
+    print(f"تم إرسال سيشن: من {start_str} إلى {end_str}")
+    
+    # الانتظار ساعتين (وقت السيشن)
+    time.sleep(120 * 60)
+    
+    b_start_str = end_str
+    b_end_dt = end_time_dt + timedelta(minutes=15)
+    b_end_str = b_end_dt.strftime("%I:%M %p")
+    
+    break_q = random.choice(break_quotes)
+    
+    break_msg = (
+        f"☕ **انتهت السيشن ووصل وقت البريك!**\n\n"
+        f"⏰ **التوقيت:** من `{b_start_str}` إلى `{b_end_str}` (15 دقيقة راحة)\n\n"
+        f"💬 {break_q}"
+    )
+    
+    send_telegram_message(break_msg)
+    print(f"تم إرسال بريك: من {b_start_str} إلى {b_end_str}")
+    
+    # الانتظار 15 دقيقة (وقت البريك)
+    time.sleep(15 * 60)
