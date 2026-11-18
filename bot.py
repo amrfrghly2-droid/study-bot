@@ -8,6 +8,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 TOKEN = "8601463498:AAHIBbSsiU_HoSH7ecY1bYUV47kxL3CDyOw"
 CHAT_ID = -1004477766854  # آيدي جروب المتابعة
 
+# متغير لحفظ آخر رسالة تمت معالجتها عشان ما نكررش الرد
+last_update_id = 0
+
 # خادم وهمي بسيط لتشغيل السيرفر السحابي 24/7 دون توقف
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -23,7 +26,7 @@ def run_web_server():
 # تشغيل الخادم في الخلفية
 Thread(target=run_web_server, daemon=True).start()
 
-# دالة لإرسال الرسائل للقناة أو الجروب
+# دالة لإرسال الرسائل
 def send_message(text, target_chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
@@ -37,14 +40,15 @@ def send_message(text, target_chat_id=CHAT_ID):
     except Exception as e:
         print("خطأ في إرسال الرسالة:", e)
 
-# دالة فحص والرد الفوري على الرسائل الخاصة (الترحيب والتفاعل)
+# دالة فحص والرد الفوري على الرسائل الخاصة
 def check_private_messages():
-    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+    global last_update_id
+    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={last_update_id + 1}&timeout=5"
     try:
         response = requests.get(url, timeout=10).json()
         if "result" in response and response["result"]:
             for update in response["result"]:
-                update_id = update["update_id"]
+                last_update_id = update["update_id"]
                 
                 if "message" in update:
                     msg = update["message"]
@@ -66,13 +70,10 @@ def check_private_messages():
                         
                         send_message(welcome_text, target_chat_id=chat_id)
                 
-                # مسح التحديث المعالج عشان ما يتكررش
-                requests.get(f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={update_id + 1}")
-                
     except Exception as e:
         print("خطأ في جلب الرسائل الخاصة:", e)
 
-# معسكرات المذاكرة (مع نصائح حاسمة لابعاد الموبايل)
+# معسكرات المذاكرة
 def study_session_1():
     msg = (
         "🚨 **بدء معسكر المذاكرة الأول (3 ساعات مكثفة)!** 📚🔥\n"
@@ -152,16 +153,13 @@ def break_session_4():
     )
     send_message(msg)
 
-# جدول الأوقات الدقيق على مدار اليوم
+# جدول الأوقات
 schedule.every().day.at("08:00").do(study_session_1)
 schedule.every().day.at("11:00").do(break_session_1)
-
 schedule.every().day.at("11:20").do(study_session_2)
 schedule.every().day.at("14:20").do(break_session_2)
-
 schedule.every().day.at("15:00").do(study_session_3)
 schedule.every().day.at("18:00").do(break_session_3)
-
 schedule.every().day.at("18:20").do(study_session_4)
 schedule.every().day.at("21:20").do(break_session_4)
 
@@ -170,4 +168,4 @@ print("🚀 بوت معسكرات المذاكرة يعمل الآن 24/7 بكف
 while True:
     schedule.run_pending()
     check_private_messages()
-    time.sleep(3)  # تقليل فترة الانتظار لسرعة الاستجابة للرسائل الخاصة
+    time.sleep(1)
