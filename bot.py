@@ -6,10 +6,7 @@ from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 TOKEN = "8601463498:AAHIBbSsiU_HoSH7ecY1bYUV47kxL3CDyOw"
-CHAT_ID = -1004477766854  # آيدي جروب المتابعة
-
-# متغير لحفظ آخر رسالة تمت معالجتها عشان ما نكررش الرد
-last_update_id = 0
+CHAT_ID = -1003936235079  # آيدي القناة الجديد
 
 # خادم وهمي بسيط لتشغيل السيرفر السحابي 24/7 دون توقف
 class SimpleHandler(BaseHTTPRequestHandler):
@@ -26,7 +23,7 @@ def run_web_server():
 # تشغيل الخادم في الخلفية
 Thread(target=run_web_server, daemon=True).start()
 
-# دالة لإرسال الرسائل
+# دالة لإرسال الرسائل للقناة
 def send_message(text, target_chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
@@ -39,39 +36,6 @@ def send_message(text, target_chat_id=CHAT_ID):
         return response.json()
     except Exception as e:
         print("خطأ في إرسال الرسالة:", e)
-
-# دالة فحص والرد الفوري على الرسائل الخاصة
-def check_private_messages():
-    global last_update_id
-    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={last_update_id + 1}&timeout=5"
-    try:
-        response = requests.get(url, timeout=10).json()
-        if "result" in response and response["result"]:
-            for update in response["result"]:
-                last_update_id = update["update_id"]
-                
-                if "message" in update:
-                    msg = update["message"]
-                    chat_type = msg.get("chat", {}).get("type")
-                    
-                    if chat_type == "private":
-                        chat_id = msg["chat"]["id"]
-                        user_name = msg.get("from", {}).get("first_name", "يا دكتورة")
-                        user_text = msg.get("text", "")
-                        
-                        print(f"تم استقبال رسالة خاصة من: {user_name} - النص: {user_text}")
-                        
-                        welcome_text = (
-                            f"أهلاً بكِ يا {user_name} في بوت طريق القمة! 🩺✨\n\n"
-                            "عالمك الخاص لتنظيم المذاكرة والمتابعة.\n"
-                            "هذا البوت **خاص بتيم متابعة الدكتور عمر جمال** لمساعدة طلاب الثانوية العامة (دفعة 2027) على تنظيم معسكرات المذاكرة وتحقيق الحلم المنشود.\n\n"
-                            "شدّي حيلك، اصبري على التعب، وكل لحظة سهر بتكتب بكرة بياض وجه في كلية الطب! 🎯💪"
-                        )
-                        
-                        send_message(welcome_text, target_chat_id=chat_id)
-                
-    except Exception as e:
-        print("خطأ في جلب الرسائل الخاصة:", e)
 
 # معسكرات المذاكرة
 def study_session_1():
@@ -163,9 +127,8 @@ schedule.every().day.at("18:00").do(break_session_3)
 schedule.every().day.at("18:20").do(study_session_4)
 schedule.every().day.at("21:20").do(break_session_4)
 
-print("🚀 بوت معسكرات المذاكرة يعمل الآن 24/7 بكفاءة تامة... 🩺")
+print("🚀 بوت معسكرات المذاكرة للقناة يعمل الآن 24/7 بكفاءة تامة... 🩺")
 
 while True:
     schedule.run_pending()
-    check_private_messages()
     time.sleep(1)
