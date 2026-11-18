@@ -8,7 +8,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 TOKEN = "8601463498:AAHIBbSsiU_HoSH7ecY1bYUV47kxL3CDyOw"
 CHAT_ID = -1004477766854  # آيدي جروب المتابعة
 
-# خادم وهمي بسيط عشان المنصة السحابية (مثل Render) تفضل مشغلة البوت 24 ساعة بدون ما ينام
+# خادم وهمي بسيط لتشغيل السيرفر السحابي 24/7 دون توقف
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -20,45 +20,55 @@ def run_web_server():
     httpd = HTTPServer(server_address, SimpleHandler)
     httpd.serve_forever()
 
-# تشغيل الخادم الوهمي في الخلفية
+# تشغيل الخادم في الخلفية
 Thread(target=run_web_server, daemon=True).start()
 
 # دالة لإرسال الرسائل للقناة أو الجروب
-def send_message(text):
+def send_message(text, target_chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
-        "chat_id": CHAT_ID,
+        "chat_id": target_chat_id,
         "text": text,
         "parse_mode": "Markdown"
     }
     try:
-        requests.post(url, json=payload)
+        response = requests.post(url, json=payload)
+        return response.json()
     except Exception as e:
         print("خطأ في إرسال الرسالة:", e)
 
-# دالة للرد التلقائي على الرسائل الخاصة (الترحيب)
+# دالة فحص والرد الفوري على الرسائل الخاصة (الترحيب والتفاعل)
 def check_private_messages():
     url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
     try:
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=10).json()
         if "result" in response and response["result"]:
             for update in response["result"]:
                 update_id = update["update_id"]
-                if "message" in update and "chat" in update["message"] and update["message"]["chat"]["type"] == "private":
-                    chat_id = update["message"]["chat"]["id"]
-                    user_name = update["message"]["from"].get("first_name", "يا دكتورة")
+                
+                if "message" in update:
+                    msg = update["message"]
+                    chat_type = msg.get("chat", {}).get("type")
                     
-                    welcome_text = (
-                        f"أهلاً بكِ يا {user_name} في بوت طريق القمة! 🩺✨\n\n"
-                        "عالمك الخاص لتنظيم المذاكرة والمتابعة.\n"
-                        "هذا البوت **خاص بتيم متابعة الدكتور عمر جمال** لمساعدة طلاب الثانوية العامة (دفعة 2027) على تنظيم معسكرات المذاكرة وتحقيق الحلم المنشود.\n\n"
-                        "شدّي حيلك، اصبري على التعب، وكل لحظة سهر بتكتب بكرة بياض وجه في كلية الطب! 🎯💪"
-                    )
-                    
-                    send_url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-                    requests.post(send_url, json={"chat_id": chat_id, "text": welcome_text, "parse_mode": "Markdown"})
-                    
-                    requests.get(f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={update_id + 1}")
+                    if chat_type == "private":
+                        chat_id = msg["chat"]["id"]
+                        user_name = msg.get("from", {}).get("first_name", "يا دكتورة")
+                        user_text = msg.get("text", "")
+                        
+                        print(f"تم استقبال رسالة خاصة من: {user_name} - النص: {user_text}")
+                        
+                        welcome_text = (
+                            f"أهلاً بكِ يا {user_name} في بوت طريق القمة! 🩺✨\n\n"
+                            "عالمك الخاص لتنظيم المذاكرة والمتابعة.\n"
+                            "هذا البوت **خاص بتيم متابعة الدكتور عمر جمال** لمساعدة طلاب الثانوية العامة (دفعة 2027) على تنظيم معسكرات المذاكرة وتحقيق الحلم المنشود.\n\n"
+                            "شدّي حيلك، اصبري على التعب، وكل لحظة سهر بتكتب بكرة بياض وجه في كلية الطب! 🎯💪"
+                        )
+                        
+                        send_message(welcome_text, target_chat_id=chat_id)
+                
+                # مسح التحديث المعالج عشان ما يتكررش
+                requests.get(f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={update_id + 1}")
+                
     except Exception as e:
         print("خطأ في جلب الرسائل الخاصة:", e)
 
@@ -127,7 +137,7 @@ def study_session_4():
     msg = (
         "🚨 **بدء معسكر المذاكرة الرابع - السهرة الليلية (3 ساعات)!** 📚🔥\n"
         "⏰ **الوقت:** من الساعة 06:20 مسائاً وحتى 09:20 ليلاً.\n\n"
-        "⚠️ **الضربة القاضية للكسل:** دي السهرة اللي بتجيب الفارق.. اقفلي النت عن الموبايل واهزمي الإرهاق.\n"
+        "⚠️ **الضربة القاضية للكسل:** دي السهرة اللي تجيب الفارق.. اقفلي النت عن الموبايل واهزمي الإرهاق.\n"
         "💡 *«السهر في طلب العلم عبادة وطريق حقيقي للقمة.»*\n\n"
         "شدوا حيلكم يا دكاترة! 🎯🩺"
     )
@@ -160,4 +170,4 @@ print("🚀 بوت معسكرات المذاكرة يعمل الآن 24/7 بكف
 while True:
     schedule.run_pending()
     check_private_messages()
-    time.sleep(10)
+    time.sleep(3)  # تقليل فترة الانتظار لسرعة الاستجابة للرسائل الخاصة
